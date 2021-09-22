@@ -2,7 +2,7 @@ function FW_optim( X_action, X_state, T_action, T_state,...
                    Z_GT, Y_GT, clips_action, clips_state, ...
                    constrs_action, constrs_state, ptrs_tracks,...
                    annot_action, annot_state, lambda, mu,...
-                   params_action, params_state, params)
+                   params_action, params_state, params, has_annot)
 
 %{
 This codes contains the optimizer based on Frank-Wolfe for the joint
@@ -103,8 +103,10 @@ f = 1/N*norm(Z-X_action*W_action-repmat(b_action,N,1),'fro').^2 + lambda*norm(W_
                                                alpha, beta, ...
                                                B1_action_state, B2_action_state);
 
-pr_jcr_all_state = evaluate_solution(Z_jcr, clips_action, Z_GT);
-pr_jcr_all_action = evaluate_solution(Y_jcr, clips_state, Y_GT);
+[~, argmax_pred_by_model] = max(X_state*W_state+ones(M,1)*b_state, [], 2);
+state_acc = (sum(Y_GT(:,1) & (argmax_pred_by_model == 1)) + sum(Y_GT(:,2) & (argmax_pred_by_model == 2))) / sum(Y_GT(:) == 1);
+pr_jcr_all_action = evaluate_solution(Z_jcr, clips_action, Z_GT, has_annot);
+pr_jcr_all_state = evaluate_solution(Y_jcr, clips_state, Y_GT, has_annot);
 
 last_state_pr_jcr  = mean(pr_jcr_all_state(:));
 last_action_pr_jcr = mean(pr_jcr_all_action);
@@ -113,6 +115,7 @@ last_action_pr_jcr = mean(pr_jcr_all_action);
 best_obj_pr_jcr_st = last_state_pr_jcr;
 best_obj_pr_jcr_act = last_action_pr_jcr;
 
+fprintf('init acc for state : %5.3f\n', state_acc);
 fprintf('init pr_jcr for state : %5.3f\n', best_obj_pr_jcr_st);
 fprintf('init pr_jcr for action: %5.3f\n', best_obj_pr_jcr_act);
 
@@ -262,8 +265,8 @@ for i = 2:params.niter
         [Z_jcr, Y_jcr] =  joint_costclassifier_rounding( X_action*W_action+ones(N,1)*b_action, X_state*W_state+ones(M,1)*b_state, K_action, K_state,...
                             ptrs_tracks, T_action, T_state, clips_action, clips_state, alpha, beta, B1_action_state, B2_action_state);
         % evaluate
-        pr_jcr_action = evaluate_solution(Z_jcr, clips_action, Z_GT);
-        pr_jcr_state = evaluate_solution(Y_jcr, clips_state, Y_GT);
+        pr_jcr_action = evaluate_solution(Z_jcr, clips_action, Z_GT, has_annot);
+        pr_jcr_state = evaluate_solution(Y_jcr, clips_state, Y_GT, has_annot);
 
         g_jcr   = compute_objective(X_state, Y_jcr, GXTP_state);
         f_jcr   = compute_objective(X_action, Z_jcr, GXTP_action);
@@ -273,6 +276,14 @@ for i = 2:params.niter
 
         last_action_pr_jcr  = mean(pr_jcr_action);
         last_state_pr_jcr = mean(pr_jcr_state(:));
+
+        [~, argmax_pred_by_model] = max(X_state*W_state+ones(M,1)*b_state, [], 2);
+        state_acc = (sum(Y_GT(:,1) & (argmax_pred_by_model == 1)) + sum(Y_GT(:,2) & (argmax_pred_by_model == 2))) / sum(Y_GT(:) == 1);
+
+        fprintf('accuracy for state = %5.2f, ', state_acc);
+        fprintf('precision for state = %5.2f, ', last_state_pr_jcr);
+        fprintf('precision for action = %5.2f.', last_action_pr_jcr);
+        fprintf('\n');
 
         if h_jcr <= best_h_jcr
             best_h_jcr = h_jcr;
@@ -295,8 +306,8 @@ end
                                                  clips_state, alpha, beta, ...
                                                  B1_action_state, B2_action_state);
 
-pr_jcr_action = evaluate_solution(Z_jcr, clips_action, Z_GT);
-pr_jcr_state = evaluate_solution(Y_jcr, clips_state, Y_GT);
+pr_jcr_action = evaluate_solution(Z_jcr, clips_action, Z_GT, has_annot);
+pr_jcr_state = evaluate_solution(Y_jcr, clips_state, Y_GT, has_annot);
 last_state_pr_jcr  = mean(pr_jcr_state(:));
 last_action_pr_jcr = mean(pr_jcr_action);
 

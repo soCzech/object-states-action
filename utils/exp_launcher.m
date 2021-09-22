@@ -25,13 +25,13 @@ params_state.lambda          = lambda_state; % Regularizer.
 rng(params_state.seed);
 
 % Load data for states and action.
-load(sprintf('./data/features_%s.mat', action));
+load(action);
 
 % Optimization.
 FW_optim(X_action, X_state, T_action, T_state, Z_GT, Y_GT, ...
          clips_action, clips_state, constrs_action, constrs_state, ...
          ptrs_tracks, annot_action, annot_state, ...
          params_action.lambda, params_state.lambda,...
-         params_action, params_state, params);
+         params_action, params_state, params, has_annot);
 
 end

@@ -1,11 +1,11 @@
 addpath('./utils')
 
-action = 'put_wheel';
+action = './new_data/features_osat_eggs.mat';
 
 lambda_state = 0.0001;
 lambda_action = 0.01;
 seed = 370;
-niter = 600;
+niter = 300;
 
 % For the close_fridge and open_fridge action we do less iterations as it is a bit slower.w
 if strcmp(action, 'close_fridge') | strcmp(action, 'open_fridge')
