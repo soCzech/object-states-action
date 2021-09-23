@@ -27,6 +27,11 @@ rng(params_state.seed);
 % Load data for states and action.
 load(action);
 
+if exist('X_state') == 0
+    X_action = double(X_action);
+    X_state = X_action;
+end
+
 % Optimization.
 FW_optim(X_action, X_state, T_action, T_state, Z_GT, Y_GT, ...
          clips_action, clips_state, constrs_action, constrs_state, ...
